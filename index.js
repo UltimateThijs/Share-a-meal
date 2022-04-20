@@ -51,7 +51,7 @@ app.get("/api/movie/:movieId", (req, res, next) => {
       status: 401,
       result: `Movie with ID ${movieId} not found`,
     });
-  }
+  };
 });
 
 app.get("/api/movie", (req, res, next) => {
