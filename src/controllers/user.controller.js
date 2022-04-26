@@ -1,7 +1,27 @@
+const assert = require('assert');
 let database = [];
 let id = 0;
 
 let controller = {
+    validateUser:(req, res, next) => {
+        let user = req.body;
+        
+        let { firstName, lastName, street, city, emailAdress, password, phoneNumber } = user;
+        try {
+            assert(typeof emailAdress === 'string', 'Email adress must be a string')
+            assert(typeof password === 'string', 'Password must be a string')
+            next()
+        } catch (err) {
+            console.log(err.code);
+            console.log(err.message);
+            res.status(400).json({
+                status: 400,
+                result: err.toString()
+            })
+        }
+
+        next();
+    },
     // UC-201 Register as a new user
     addUser:(req, res) => {
         let user = req.body;
