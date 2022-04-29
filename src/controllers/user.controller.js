@@ -3,6 +3,7 @@ let database = [];
 let id = 0;
 
 let controller = {
+    // UC
     validateUser:(req, res, next) => {
         let user = req.body;
         
@@ -12,15 +13,12 @@ let controller = {
             assert(typeof password === 'string', 'Password must be a string')
             next()
         } catch (err) {
-            console.log(err.code);
-            console.log(err.message);
-            res.status(400).json({
+            const error = {
                 status: 400,
-                result: err.toString()
-            })
+                result: err.message,
+            };
+            next(error)
         }
-
-        next();
     },
     // UC-201 Register as a new user
     addUser:(req, res) => {
@@ -72,10 +70,11 @@ let controller = {
             result: user,
             });
         } else {
-            res.status(404).json({
+            const error = {
             status: 404,
             result: `User with ID ${userId} not found`,
-            });
+            }
+            next(error)
         };
     },
     // UC-205 Update a single user
