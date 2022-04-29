@@ -1,4 +1,5 @@
 const assert = require('assert');
+const dbconnection = require('../../database/dbconnection')
 let database = [];
 let id = 0;
 
@@ -20,6 +21,7 @@ let controller = {
             next(error)
         }
     },
+
     // UC-201 Register as a new user
     addUser:(req, res) => {
         let user = req.body;
@@ -43,14 +45,34 @@ let controller = {
             });
         }
     },
+
     // UC-202 Get all users
-    getAllUsers:(req, res) => {
-        console.log(database)
-        res.status(200).json({
-            status: 200,
-            result: database,
+    getAllUsers:(req, res, next) => {
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err; // not connected!
+        
+            // Use the connection
+            connection.query('SELECT * FROM user', function (error, results, fields) {
+                // When done with the connection, release it.
+                connection.release();
+        
+                // Handle error after the release.
+                if (error) throw error;
+        
+                // Don't use the connection here, it has been returned to the pool.
+                console.log('#results = ', results.length)
+                res.status(200).json({
+                    status: 200,
+                    result: results
+                })
+        
+                // pool.end((err) => {
+                //     console.log('pool was closed')
+                // });
+            });
         });
     },
+
     // UC-203 Request personal user profile
     requestUserProfile:(req, res) => {
         res.status(404).json({
@@ -58,6 +80,7 @@ let controller = {
             result: "Function not functioning yet",
         });
     },
+
     // UC-204 Get single user by ID
     getUserById:(req, res) => {
         const userId = req.params.userId;
@@ -77,6 +100,7 @@ let controller = {
             next(error)
         };
     },
+
     // UC-205 Update a single user
     updateUser:(req, res) => {
         let user = req.body;
@@ -110,6 +134,7 @@ let controller = {
             result: `User with id ${req.params.userId} updated successfully`
         })
     },
+
     // UC-206 Delete a user
     deleteUser:(req, res) => {
         const removeIndex = database.findIndex((item) => item.id == req.params.userId)
