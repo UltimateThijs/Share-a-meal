@@ -71,8 +71,8 @@ let controller = {
 
                 // Handle error after the release.
                 if (error) {
-                    res.status(404).json({
-                        status: 404,
+                    res.status(400).json({
+                        status: 400,
                         message: error.message
                     })
                 }
