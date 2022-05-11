@@ -10,12 +10,12 @@ let controller = {
         let { emailAdress, password, firstName, lastName, city, street } = user;
 
         try {
-            assert(typeof emailAdress === 'string', 'Email address must be a string')
-            assert(typeof firstName === 'string', 'First name must be a string')
-            assert(typeof lastName === 'string', 'Last name must be a string')
-            assert(typeof password === 'string', 'Password must be a string')
-            assert(typeof street === 'string', 'Street must be a string')
-            assert(typeof city === 'string', 'City must be a string')
+            assert(typeof emailAdress === 'string', 'emailAdress must be a string')
+            assert(typeof firstName === 'string', 'firstName must be a string')
+            assert(typeof lastName === 'string', 'lastName must be a string')
+            assert(typeof password === 'string', 'password must be a string')
+            assert(typeof street === 'string', 'street must be a string')
+            assert(typeof city === 'string', 'city must be a string')
 
         } catch (error) {
             const err = {
@@ -131,7 +131,7 @@ let controller = {
                     } else {
                         res.status(404).json({
                             status: 404,
-                            message: 'User not found'
+                            message: 'User not found!'
                         })
                     }
                 }
@@ -173,7 +173,7 @@ let controller = {
                 } else {
                     res.status(400).json({
                         status: 400,
-                        message: 'User does not exist'
+                        message: 'User not found'
                     })
                 }
             });
@@ -204,7 +204,7 @@ let controller = {
                 } else {
                     res.status(200).json({
                         status: 200,
-                        message: `User with ID ${userId} deleted successfully`,
+                        message: `User deleted successfully`,
                         result: results
                     })
                 }
