@@ -30,7 +30,7 @@ let controller = {
 
     validateUpdatedUser: (req, res, next) =>{
         let user = req.body;
-        let { emailAdress, password, firstName, lastName, isActiyve, street, city, phoneNumber } = user;
+        let { emailAdress, password, firstName, lastName, isActive, street, city, phoneNumber } = user;
 
         try {
             assert(typeof emailAdress === 'string', 'email must be a string')
