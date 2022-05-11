@@ -143,18 +143,14 @@ let controller = {
     updateUser: (req, res, next) => {
         let userData = req.body;
         const userId = req.params.userId;
-        let user = [userData.firstName, userData.lastName,
-        userData.isActive, userData.emailAdress, userData.password,
-        userData.phoneNumber, userData.roles, userData.street, userData.city, parseInt(userId)];
 
         dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
 
             // Use the connection
-            connection.query(`UPDATE user SET firstName = ?, lastName = ?,
-            isActive = ?, emailAdress = ?, password = ?,
-            phoneNumber = ?, roles = ?,
-            street = ?, city = ? WHERE id = ?`, user, function (error, results, fields) {
+            const query = "UPDATE user SET " + Object.keys(userData).map(key => `${key} = ?`).join(", ") + " WHERE id = ?";
+            const parameters = [...Object.values(userData), userId];
+            connection.query(query, parameters, function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
 
