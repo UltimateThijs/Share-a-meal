@@ -18,8 +18,8 @@ let controller = {
             assert(typeof city === 'string', 'City must be a string')
 
         } catch (error) {
-            res.status(404).json({
-                status: 404,
+            res.status(400).json({
+                status: 400,
                 message: error.message
             })
             next(err)
@@ -30,20 +30,21 @@ let controller = {
 
     validateUpdatedUser: (req, res, next) =>{
         let user = req.body;
-        let { emailAdress, password, firstName, lastName, street, city, phoneNumber } = user;
+        let { emailAdress, password, firstName, lastName, isActiyve, street, city, phoneNumber } = user;
 
         try {
             assert(typeof emailAdress === 'string', 'email must be a string')
             assert(typeof firstName === 'string', 'firstName must be a string')
             assert(typeof lastName === 'string', 'lastName must be a string')
             assert(typeof password === 'string', 'password must be a string')
+            assert(typeof isActive === 'boolean', 'isActive must be a boolean')
             assert(typeof street === 'string', 'street must be a string')
             assert(typeof city === 'string', 'city must be a string')
             assert(typeof phoneNumber === 'string', 'phoneNumber must be a string')
 
         } catch (error) {
-            res.status(404).json({
-                status: 404,
+            res.status(400).json({
+                status: 400,
                 message: error.message
             })
             next(err)
