@@ -168,10 +168,10 @@ let controller = {
                 } else if (results.affectedRows === 1) {
                     res.status(200).json({
                         status: 200,
-                        message: `User with ID ${userId} successfully updated`,
+                        message: `User successfully updated`,
                         result: {
                             id: userId,
-                            ...user
+                            ...userData
                         }
                     })
                 } else {
