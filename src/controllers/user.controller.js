@@ -4,77 +4,113 @@ let database = [];
 let id = 0;
 
 let controller = {
-    // UC
-    validateUser:(req, res, next) => {
+
+    validateUser: (req, res, next) =>{
         let user = req.body;
-        
-        let { firstName, lastName, street, city, emailAdress, password, phoneNumber } = user;
+        let { emailAdress, password, firstName, lastName, city, street } = user;
+
         try {
-            assert(typeof emailAdress === 'string', 'Email adress must be a string')
+            assert(typeof emailAdress === 'string', 'Email address must be a string')
+            assert(typeof firstName === 'string', 'First name must be a string')
+            assert(typeof lastName === 'string', 'Last name must be a string')
             assert(typeof password === 'string', 'Password must be a string')
-            next()
-        } catch (err) {
-            const error = {
-                status: 400,
-                result: err.message,
-            };
-            next(error)
+            assert(typeof street === 'string', 'Street must be a string')
+            assert(typeof city === 'string', 'City must be a string')
+
+        } catch (error) {
+            res.status(404).json({
+                status: 404,
+                message: error.message
+            })
+            next(err)
         }
+
+        next();
+    },
+
+    validateUpdatedUser: (req, res, next) =>{
+        let user = req.body;
+        let { emailAdress, password, firstName, lastName, street, city, phoneNumber } = user;
+
+        try {
+            assert(typeof emailAdress === 'string', 'email must be a string')
+            assert(typeof firstName === 'string', 'firstName must be a string')
+            assert(typeof lastName === 'string', 'lastName must be a string')
+            assert(typeof password === 'string', 'password must be a string')
+            assert(typeof street === 'string', 'street must be a string')
+            assert(typeof city === 'string', 'city must be a string')
+            assert(typeof phoneNumber === 'string', 'phoneNumber must be a string')
+
+        } catch (error) {
+            res.status(404).json({
+                status: 404,
+                message: error.message
+            })
+            next(err)
+        }
+
+        next();
     },
 
     // UC-201 Register as a new user
-    addUser:(req, res) => {
-        let user = req.body;
-        let email = req.body.email
-        if (database.filter((item) => item.email == email).length == 0) {
-            id++;
-            user = {
-            id,
-            ...user,
-            };
-            console.log(user);
-            database.push(user);
-            res.status(201).json({
-            status: 201,
-            result: database,
-            });
-        } else {
-            res.status(404).json({
-            status: 404,
-            result: `Email address is already in use`,
-            });
-        }
-    },
+    addUser: (req, res, next) => {
+        let userData = req.body;
+        let user = [userData.firstName, userData.lastName,
+        userData.isActive, userData.emailAdress, userData.password,
+        userData.phoneNumber, userData.roles, userData.street, userData.city]
 
-    // UC-202 Get all users
-    getAllUsers:(req, res, next) => {
         dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
-        
+
             // Use the connection
-            connection.query('SELECT * FROM user', function (error, results, fields) {
+            connection.query(`INSERT INTO user (firstName, lastName, isActive, emailAdress, password, phoneNumber, roles, street, city) VALUES
+                (?,?,?,?,?,?,?,?,?)`, user, function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
-        
+
                 // Handle error after the release.
-                if (error) throw error;
-        
+                if (error) {
+                    res.status(404).json({
+                        status: 404,
+                        message: error.message
+                    })
+                }
+
                 // Don't use the connection here, it has been returned to the pool.
-                console.log('#results = ', results.length)
+                console.log('Results = ', results.length)
                 res.status(200).json({
                     status: 200,
                     result: results
                 })
-        
-                // pool.end((err) => {
-                //     console.log('pool was closed')
-                // });
+            });
+        });
+    },
+
+    // UC-202 Get all users
+    getAllUsers: (req, res, next) => {
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err; // not connected!
+
+            // Use the connection
+            connection.query('SELECT * FROM user', function (error, results, fields) {
+                // When done with the connection, release it.
+                connection.release();
+
+                // Handle error after the release.
+                if (error) throw error;
+
+                // Don't use the connection here, it has been returned to the pool.
+                console.log('Results = ', results.length)
+                res.status(200).json({
+                    status: 200,
+                    result: results
+                })
             });
         });
     },
 
     // UC-203 Request personal user profile
-    requestUserProfile:(req, res) => {
+    requestUserProfile: (req, res, next) => {
         res.status(404).json({
             status: 404,
             result: "Function not functioning yet",
@@ -82,76 +118,117 @@ let controller = {
     },
 
     // UC-204 Get single user by ID
-    getUserById:(req, res) => {
+    getUserById: (req, res, next) => {
         const userId = req.params.userId;
         console.log(`User met ID ${userId} gezocht`);
-        let user = database.filter((item) => item.id == userId);
-        if (user.length > 0) {
-            console.log(user);
-            res.status(200).json({
-            status: 200,
-            result: user,
+
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err; // not connected!
+
+            // Use the connection
+            connection.query(`SELECT * FROM user WHERE id = ${userId}`, function (error, results, fields) {
+                // When done with the connection, release it.
+                connection.release();
+
+                // Handle error after the release.
+                if(error) {
+                    console.error('Error in DB');
+                    console.debug(error);
+                    return;
+                } else {
+                    if (results && results.length ) {
+                        res.status(200).json({
+                            status: 200,
+                            result: results
+                        })
+                    } else {
+                        res.status(404).json({
+                            status: 404,
+                            message: 'User not found'
+                        })
+                    }
+                }
             });
-        } else {
-            const error = {
-            status: 404,
-            result: `User with ID ${userId} not found`,
-            }
-            next(error)
-        };
+        });
     },
 
     // UC-205 Update a single user
-    updateUser:(req, res) => {
-        let user = req.body;
-        const removedIndex = database.findIndex((item) => item.id == req.params.userId)
+    updateUser: (req, res, next) => {
+        let userData = req.body;
+        const userId = req.params.userId;
+        let user = [userData.firstName, userData.lastName,
+        userData.isActive, userData.emailAdress, userData.password,
+        userData.phoneNumber, userData.roles, userData.street, userData.city, parseInt(userId)];
 
-            if(removedIndex == -1) {
-            res.status(404).json({
-            status: 404,
-            result: `User with ID ${req.params.userId} does not exist`
-            })
-            return
-        } else if(user.email == null || database.filter((item) => item.email == user.email).length > 0) {
-            res.status(404).json({
-            status: 404,
-            result: "Email address is already in use"
-            })
-            return
-        }
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err; // not connected!
 
-        database.splice(removedIndex, 1)
+            // Use the connection
+            connection.query(`UPDATE user SET firstName = ?, lastName = ?,
+            isActive = ?, emailAdress = ?, password = ?,
+            phoneNumber = ?, roles = ?,
+            street = ?, city = ? WHERE id = ?`,user, function (error, results, fields) {
+                // When done with the connection, release it.
+                connection.release();
 
-        user = {
-            id:req.params.userId,
-            ...user
-        }
-        database.push(user)
-
-        console.log(`User with id ${req.params.userId} updated successfully`)
-        res.status(200).json({
-            status: 200,
-            result: `User with id ${req.params.userId} updated successfully`
-        })
+                // Handle error after the release.
+                if (error) {
+                    res.status(404).json({
+                        status: 404,
+                        message: error.message
+                    })
+                    return;
+                } else if(results.affectedRows === 0) {
+                    res.status(404).json({
+                        status: 404,
+                        message: 'User not found'
+                    })
+                } else {
+                    res.status(201).json({
+                        status: 201,
+                        message: `User with ID ${userId} successfully updated`,
+                        result: {
+                            result: {
+                                id: userId,
+                                ...user
+                            }
+                        }
+                    })
+                }
+            });
+        });
     },
 
     // UC-206 Delete a user
-    deleteUser:(req, res) => {
-        const removeIndex = database.findIndex((item) => item.id == req.params.userId)
-        if(removeIndex != -1) {
-            database.splice(removeIndex, 1)
-            console.log(`User with id ${req.params.userId} deleted successfully`)
-            res.status(200).json({
-            status: 200,
-            result: `User with id ${req.params.userId} deleted successfully`
-            })
-            return
-        } else {
-            res.status(404).json({
-            status: 404,
-            result: `User with id ${req.params.userId} does not exist`
-            })
-        }
-    }
+    deleteUser: (req, res) => {
+        const userId = req.params.userId;
+
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err; // not connected!
+
+            // Use the connection
+            connection.query(`DELETE FROM user WHERE id = ${userId}`, function (error, results, fields) {
+                // When done with the connection, release it.
+                connection.release();
+
+                // Handle error after the release.
+                if (error) {
+                    console.log(error);
+                    return;
+                } else if(results.affectedRows === 0) {
+                    res.status(404).json({
+                        status: 404,
+                        message: 'User not found'
+                    })
+                } else {
+                    res.status(200).json({
+                        status: 200,
+                        message: `User with ID ${userId} deleted successfully`,
+                        result: results
+                    })
+                }
+            });
+        });
+    },
 }
 module.exports = controller
