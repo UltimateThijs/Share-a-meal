@@ -147,4 +147,31 @@ describe('Manage users /api/user', () => {
             });
         })
     })
+
+    describe('UC-206 Delete a user', () => {
+        it('TC-206-1 Gebruiker bestaat niet', (done) => {
+            chai
+                .request(server)
+                .delete('/api/user/420')
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, message } = res.body;
+                    status.should.equal(400);
+                    message.should.be.an('string').that.equals("User does not exist");
+                    done();
+                })
+        })
+        it('TC-206-4 Gebruiker bestaat', (done) => {
+            chai
+                .request(server)
+                .delete('/api/user/' + insertId)
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, message } = res.body;
+                    status.should.equal(200);
+                    message.should.be.an('string').that.equals("User deleted successfully");
+                    done();
+                })
+        })
+    })
 })
