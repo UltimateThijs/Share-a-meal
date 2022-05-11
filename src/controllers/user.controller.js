@@ -5,7 +5,7 @@ let id = 0;
 
 let controller = {
 
-    validateUser: (req, res, next) =>{
+    validateUser: (req, res, next) => {
         let user = req.body;
         let { emailAdress, password, firstName, lastName, city, street } = user;
 
@@ -28,7 +28,7 @@ let controller = {
         next();
     },
 
-    validateUpdatedUser: (req, res, next) =>{
+    validateUpdatedUser: (req, res, next) => {
         let user = req.body;
         let { emailAdress, password, firstName, lastName, street, city, isActive, phoneNumber } = user;
 
@@ -49,14 +49,14 @@ let controller = {
     addUser: (req, res, next) => {
         let user = req.body
 
-        dbconnection.getConnection(function(err, connection) {
+        dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
-           
+
             // Use the connection
-            connection.query('INSERT INTO user (firstName, lastName, street, city, password, emailAdress) VALUES (?, ?, ?, ?, ?, ?);', [user.firstName, user.lastName, user.street, user.city, user.password, user.emailAdress] ,function (error, results, fields) {
+            connection.query('INSERT INTO user (firstName, lastName, street, city, password, emailAdress) VALUES (?, ?, ?, ?, ?, ?);', [user.firstName, user.lastName, user.street, user.city, user.password, user.emailAdress], function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
-            
+
                 // Handle error after the release.
                 if (error) {
                     res.status(409).json({
@@ -80,17 +80,17 @@ let controller = {
 
     // UC-202 Get all users
     getAllUsers: (req, res, next) => {
-        dbconnection.getConnection(function(err, connection) {
+        dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
-           
+
             // Use the connection
-            connection.query('SELECT * FROM user;', function (error, results, fields) {
+            connection.query('SELECT * FROM user', function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
-            
+
                 // Handle error after the release.
                 if (error) throw error;
-        
+
                 res.status(201).json({
                     status: 201,
                     result: results
@@ -121,12 +121,12 @@ let controller = {
                 connection.release();
 
                 // Handle error after the release.
-                if(error) {
+                if (error) {
                     console.error('Error in DB');
                     console.debug(error);
                     return;
                 } else {
-                    if (results && results.length ) {
+                    if (results && results.length) {
                         res.status(200).json({
                             status: 200,
                             result: results
@@ -157,31 +157,29 @@ let controller = {
             connection.query(`UPDATE user SET firstName = ?, lastName = ?,
             isActive = ?, emailAdress = ?, password = ?,
             phoneNumber = ?, roles = ?,
-            street = ?, city = ? WHERE id = ?`,user, function (error, results, fields) {
+            street = ?, city = ? WHERE id = ?`, user, function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
 
                 // Handle error after the release.
                 if (error) {
-                    res.status(404).json({
-                        status: 404,
+                    res.status(400).json({
+                        status: 400,
                         message: error.message
                     })
                     return;
-                } else if(results.affectedRows === 0) {
-                    res.status(404).json({
-                        status: 404,
+                } else if (results.affectedRows === 0) {
+                    res.status(400).json({
+                        status: 400,
                         message: 'User not found'
                     })
                 } else {
-                    res.status(201).json({
-                        status: 201,
+                    res.status(200).json({
+                        status: 200,
                         message: `User with ID ${userId} successfully updated`,
                         result: {
-                            result: {
-                                id: userId,
-                                ...user
-                            }
+                            id: userId,
+                            ...user
                         }
                     })
                 }
@@ -205,9 +203,9 @@ let controller = {
                 if (error) {
                     console.log(error);
                     return;
-                } else if(results.affectedRows === 0) {
-                    res.status(404).json({
-                        status: 404,
+                } else if (results.affectedRows === 0) {
+                    res.status(400).json({
+                        status: 400,
                         message: 'User not found'
                     })
                 } else {
