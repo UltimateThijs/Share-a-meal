@@ -74,4 +74,31 @@ describe('Manage users /api/user', () => {
             }) 
         });
     })
+
+    describe('UC-204 register as new user', () => {
+        it('TC-204-2 Gebruiker-ID bestaat niet', (done) => {
+            chai
+                .request(server)
+                .get('/api/user/420')
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, message } = res.body;
+                    status.should.equal(404);
+                    message.should.be.an('string').that.equals("User not found!");
+                    done();
+                })
+        })
+        it('TC-204-4 Gebruiker-ID bestaat', (done) => {
+            chai
+                .request(server)
+                .get('/api/user/' + insertId)
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, result } = res.body;
+                    status.should.equal(200);
+                    result.should.be.an('object');
+                    done();
+                })
+        })
+    })
 })
