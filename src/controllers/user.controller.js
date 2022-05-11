@@ -84,7 +84,7 @@ let controller = {
                             phoneNumber: user.isActive || "-",
                             ...user
                         }
-                    })
+                    });
                 }
             });
         });
