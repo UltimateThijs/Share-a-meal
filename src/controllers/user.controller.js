@@ -71,18 +71,21 @@ let controller = {
 
                 // Handle error after the release.
                 if (error) {
-                    res.status(400).json({
-                        status: 400,
+                    res.status(409).json({
+                        status: 409,
                         message: error.message
                     })
+                } else {
+                    res.status(201).json({
+                        status: 201,
+                        result: {
+                            id: results.insertId,
+                            isActive: user.isActive || true,
+                            phoneNumber: user.isActive || "-",
+                            ...user
+                        }
+                    });
                 }
-
-                // Don't use the connection here, it has been returned to the pool.
-                console.log('Results = ', results.length)
-                res.status(200).json({
-                    status: 200,
-                    result: results
-                })
             });
         });
     },
