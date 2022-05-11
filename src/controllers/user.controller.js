@@ -111,15 +111,12 @@ let controller = {
     getUserById: (req, res, next) => {
         const userId = req.params.userId;
         console.log(`User met ID ${userId} gezocht`);
-
         dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
-
             // Use the connection
             connection.query(`SELECT * FROM user WHERE id = ${userId}`, function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
-
                 // Handle error after the release.
                 if (error) {
                     console.error('Error in DB');
@@ -129,7 +126,7 @@ let controller = {
                     if (results && results.length) {
                         res.status(200).json({
                             status: 200,
-                            result: results
+                            result: results[0]
                         })
                     } else {
                         res.status(404).json({
@@ -168,12 +165,7 @@ let controller = {
                         message: error.message
                     })
                     return;
-                } else if (results.affectedRows === 0) {
-                    res.status(400).json({
-                        status: 400,
-                        message: 'User not found'
-                    })
-                } else {
+                } else if (results.affectedRows === 1) {
                     res.status(200).json({
                         status: 200,
                         message: `User with ID ${userId} successfully updated`,
@@ -181,6 +173,11 @@ let controller = {
                             id: userId,
                             ...user
                         }
+                    })
+                } else {
+                    res.status(400).json({
+                        status: 400,
+                        message: 'User does not exist'
                     })
                 }
             });
