@@ -101,4 +101,50 @@ describe('Manage users /api/user', () => {
                 })
         })
     })
+
+    describe('UC-205 Update a user', () => {
+        it('TC-205-1 Verplicht veld ontbreekt', (done) => {
+            chai.request(server).put('/api/user/1').send({
+                // email: 'user@example.com',
+                lastName: 'Tester',
+                password: 'secret'
+            })
+            .end((err, res) => {
+                res.should.be.an('object');
+                let { status, message } = res.body;
+                status.should.equals(400)
+                message.should.be.a('string').that.equals('emailAddress must be a string');
+                done();
+            });
+        })
+        it('TC-205-4 Gebruiker bestaat niet', (done) => {
+            chai.request(server).put('/api/user/420').send({
+                emailAdress: 'user@example.com',
+                lastName: 'tester',
+                password: 'secret'
+            })
+            .end((err, res) => {
+                res.should.be.an('object');
+                let { status, message } = res.body;
+                status.should.equals(400)
+                message.should.be.a('string').that.equals('User not found');
+                done();
+            });
+        })
+
+        it('TC-205-6 Gebruiker succesvol gewijzigd', (done) => {
+            chai.request(server).put('/api/user/' + insertId).send({
+                emailAdress: 'userUpdated@example.com',
+                lastName: 'tester',
+                password: 'secret'
+            })
+            .end((err, res) => {
+                res.should.be.an('object');
+                let { status, result } = res.body;
+                status.should.equals(200)
+                result.should.be.a('object')
+                done();
+            });
+        })
+    })
 })
