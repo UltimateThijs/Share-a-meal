@@ -11,7 +11,7 @@ let controller = {
 
         try {
             assert(typeof emailAdress === 'string', 'emailAdress must be a string')
-            assert(typeof firstName === 'string', 'firstName must be a strin')
+            assert(typeof firstName === 'string', 'firstName must be a string')
             assert(typeof lastName === 'string', 'lastName must be a string')
             assert(typeof password === 'string', 'password must be a string')
             assert(typeof street === 'string', 'street must be a string')
@@ -131,7 +131,7 @@ let controller = {
                     } else {
                         res.status(404).json({
                             status: 404,
-                            message: 'User not found'
+                            message: 'User not found!'
                         })
                     }
                 }
@@ -173,7 +173,7 @@ let controller = {
                 } else {
                     res.status(400).json({
                         status: 400,
-                        message: 'User does not exist'
+                        message: 'User not found'
                     })
                 }
             });
@@ -204,7 +204,7 @@ let controller = {
                 } else {
                     res.status(200).json({
                         status: 200,
-                        message: `User with ID ${userId} deleted successfully`,
+                        message: `User deleted successfully`,
                         result: results
                     })
                 }
