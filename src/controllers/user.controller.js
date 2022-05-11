@@ -18,8 +18,8 @@ let controller = {
             assert(typeof city === 'string', 'City must be a string')
 
         } catch (error) {
-            res.status(400).json({
-                status: 400,
+            res.status(409).json({
+                status: 409,
                 message: error.message
             })
             next(err)
@@ -30,7 +30,7 @@ let controller = {
 
     validateUpdatedUser: (req, res, next) =>{
         let user = req.body;
-        let { emailAdress, password, firstName, lastName, isActiyve, street, city, phoneNumber } = user;
+        let { emailAdress, password, firstName, lastName, isActive, street, city, phoneNumber } = user;
 
         try {
             assert(typeof emailAdress === 'string', 'email must be a string')
