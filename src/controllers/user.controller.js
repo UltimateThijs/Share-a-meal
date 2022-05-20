@@ -1,31 +1,31 @@
 const assert = require('assert');
-const dbconnection = require('../../database/dbconnection')
-let database = [];
-let id = 0;
+const dbconnection = require('../database/dbconnection')
+const logger = require('../config/config').logger;
 
 let controller = {
 
     validateUser: (req, res, next) => {
-        let user = req.body;
-        let { emailAdress, password, firstName, lastName, city, street } = user;
+        let { emailAdress, password, firstName, lastName, city, street } = req.body;
 
         try {
-            assert(typeof emailAdress === 'string', 'emailAdress must be a string')
-            assert(typeof firstName === 'string', 'firstName must be a string')
-            assert(typeof lastName === 'string', 'lastName must be a string')
-            assert(typeof password === 'string', 'password must be a string')
-            assert(typeof street === 'string', 'street must be a string')
-            assert(typeof city === 'string', 'city must be a string')
+            assert.equal(typeof emailAdress === 'string', 'emailAdress must be a string')
+            assert.equal(typeof firstName === 'string', 'firstName must be a string')
+            assert.equal(typeof lastName === 'string', 'lastName must be a string')
+            assert.equal(typeof password === 'string', 'password must be a string')
+            assert.equal(typeof street === 'string', 'street must be a string')
+            assert.equal(typeof city === 'string', 'city must be a string')
 
-        } catch (error) {
-            const err = {
+            next()
+
+        } catch (err) {
+            logger.debug(`Error message: ${err.message}`)
+            logger.debug(`Error code: ${err.code}`)
+
+            res.status(400).json({
                 status: 400,
-                message: error.message
-            }
-            next(err)
+                message: err.message
+            })
         }
-
-        next();
     },
 
     validateUpdatedUser: (req, res, next) => {
@@ -80,17 +80,41 @@ let controller = {
 
     // UC-202 Get all users
     getAllUsers: (req, res, next) => {
+        logger.debug(`getAllUsers aangeroepen. req.userId = ${req.userId}`);
+        
+        const queryParams = req.query
+        logger.debug(queryParams);
+
+        let { firstName, lastName } = req.query
+        let queryString = 'SELECT `id`, `firstName` FROM `user`'
+        if (firstName || lastName) {
+            queryString += ' WHERE '
+            if (firstName) {
+                queryString += `firstName LIKE '%${firstName}%'`
+                firstName = '%' + firstName + '%'
+            }
+            if (firstName && lastName) {
+                queryString += ` AND `
+            }
+            if (lastName) {
+                queryString += `lastName='${lastName}'`
+            }
+        }
+        queryString += ';'
+        logger.debug(`queryString = ${queryString}`)
+
         dbconnection.getConnection(function (err, connection) {
-            if (err) throw err; // not connected!
+            if (err) next(err); // not connected!
 
             // Use the connection
-            connection.query('SELECT * FROM user', function (error, results, fields) {
+            connection.query(queryString, [firstName, lastName], function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
 
                 // Handle error after the release.
-                if (error) throw error;
+                if (error) next(error);
 
+                logger.debug('#results = ', results.length);
                 res.status(201).json({
                     status: 201,
                     result: results
@@ -110,7 +134,7 @@ let controller = {
     // UC-204 Get single user by ID
     getUserById: (req, res, next) => {
         const userId = req.params.userId;
-        console.log(`User met ID ${userId} gezocht`);
+        logger.debug(`User met ID ${userId} gezocht`);
         dbconnection.getConnection(function (err, connection) {
             if (err) throw err; // not connected!
             // Use the connection

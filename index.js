@@ -1,20 +1,24 @@
 const express = require("express");
 const app = express();
-require('dotenv').config()
+require('dotenv').config();
 
 const port = process.env.PORT;
 const bodyParser = require("body-parser");
-const userRouter = require('./src/routes/user.routes');
+const authRoutes = require('./src/routes/auth.routes');
+const userRoutes = require('./src/routes/user.routes');
+const dbconnection = require('./src/database/dbconnection');
+const logger = require('./src/config/config').logger;
 
 app.use(bodyParser.json());
 
 app.all("*", (req, res, next) => {
   const method = req.method;
-  console.log(`Method ${method} is aangeroepen`);
+  logger.debug(`Method ${method} is aangeroepen`);
   next();
 });
 
-app.use(userRouter)
+app.use(userRoutes)
+app.use(authRoutes)
 
 app.all("*", (req, res) => {
   res.status(404).json({
@@ -25,11 +29,22 @@ app.all("*", (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  res.status(err.status).json(err);
+  logger.debug('Error handler called.');
+  res.status(500).json({
+    status: 500,
+    message: err.toString()
+  })
 })
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  logger.debug(`Example app listening on port ${port}`);
 });
+
+process.on('SIGINT', () => {
+  logger.debug('SIGINT signal received: closing HTTP server')
+  dbconnection.end((err) => {
+    logger.debug('Database connection closed')
+  })
+})
 
 module.exports = app;
