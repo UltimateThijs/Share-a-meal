@@ -1,11 +1,14 @@
 process.env.DB_DATABASE = process.env.DB_DATABASE || 'share-a-meal-testdb'
+process.env.LOGLEVEL = 'warn'
 
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const server = require('../../index')
 const assert = require('assert')
 require('dotenv').config()
-const dbconnection = require('../database/dbconnection')
+const dbconnection = require('../../src/database/dbconnection')
+const jwt = require('jsonwebtoken')
+const { jstSecretKey, logger } = require('../../src/config/config')
 
 chai.should()
 chai.use(chaiHttp)
@@ -13,8 +16,8 @@ chai.use(chaiHttp)
 /**
 * Db queries to clear and fill the test database before each test.
 */
-const CLEAR_MEAL_TABLE = 'DELETE FROM `meal`;'
-const CLEAR_PARTICIPANTS_TABLE = 'DELETE FROM `meal_participants_user`;'
+const CLEAR_MEAL_TABLE = 'DELETE IGNORE FROM `meal`;'
+const CLEAR_PARTICIPANTS_TABLE = 'DELETE IGNORE FROM `meal_participants_user`;'
 const CLEAR_USERS_TABLE = 'DELETE IGNORE FROM `user`;'
 const CLEAR_DB = CLEAR_MEAL_TABLE + CLEAR_PARTICIPANTS_TABLE + CLEAR_USERS_TABLE
 
@@ -22,6 +25,11 @@ const INSERT_USER = `INSERT INTO user (firstName, lastName, emailAdress, passwor
 ("John", "Doe", "testmail@gmail.com", "secret","test", "test");`
 
 let insertId = 1;
+
+const INSERT_MEALS =
+    'INSERT INTO `meal` (`id`, `name`, `description`, `imageUrl`, `dateTime`, `maxAmountOfParticipants`, `price`, `cookId`) VALUES' +
+    "(1, 'Meal A', 'description', 'image url', NOW(), 5, 6.50, 1)," +
+    "(2, 'Meal B', 'description', 'image url', NOW(), 5, 6.50, 1);"
 
 describe('Manage users api/user', () => {
     beforeEach((done) => {
