@@ -22,7 +22,7 @@ const CLEAR_USERS_TABLE = 'DELETE IGNORE FROM `user`;'
 const CLEAR_DB = CLEAR_MEAL_TABLE + CLEAR_PARTICIPANTS_TABLE + CLEAR_USERS_TABLE
 
 const INSERT_USER = `INSERT INTO user (firstName, lastName, emailAdress, password, street, city) VALUES
-("John", "Doe", "testmail@gmail.com", "secret","test", "test");`
+("John", "Doe", "d.ambesi@avans.nl", "secret","test", "test");`
 
 let insertId = 1;
 
@@ -81,10 +81,6 @@ describe('Manage users api/user', () => {
                         street: "Lovensdijkstraat",
                         city: "Breda"
                     })
-                    .set(
-                        'authorization',
-                        'Bearer ' + jwt.sign({ id: 1 }, jwtSecretKey)
-                    )
                     .end((err, res) => {
                         res.should.be.an('object');
                         let { status, message } = res.body;
@@ -97,10 +93,6 @@ describe('Manage users api/user', () => {
                 chai
                     .request(server)
                     .post('/api/user')
-                    .set(
-                        'authorization',
-                        'Bearer ' + jwt.sign({ id: 1 }, jwtSecretKey)
-                    )
                     .send({
                         "firstName": "Johannes",
                         "lastName": "Wiebel",
@@ -122,10 +114,6 @@ describe('Manage users api/user', () => {
                 chai
                     .request(server)
                     .post('/api/user')
-                    .set(
-                        'authorization',
-                        'Bearer ' + jwt.sign({ id: 1 }, jwtSecretKey)
-                    )
                     .send({
                         "firstName": "Test",
                         "lastName": "Tester",
@@ -147,7 +135,7 @@ describe('Manage users api/user', () => {
             });
         })
 
-        describe('UC-204 register as new user', () => {
+        describe('UC-204 get user by ID', () => {
             it('TC-204-2 Gebruiker-ID bestaat niet', (done) => {
                 chai
                     .request(server)
