@@ -115,24 +115,24 @@ updateMeal: (req, res, next) => {
 
     // UC-303 Get all meals
     getAllMeals: (req, res) => {
-        logger.debug(`getAllUsers aangeroepen. req.userId = ${req.userId}`);
+        logger.debug(`getAllMeals aangeroepen.`);
 
         const queryParams = req.query
         logger.debug(queryParams);
 
-        let { firstName, lastName } = req.query
-        let queryString = 'SELECT `id`, `firstName` FROM `user`'
-        if (firstName || lastName) {
+        let { name, price } = req.query
+        let queryString = 'SELECT `id`, `name`, `price` FROM `meal`'
+        if (name || price) {
             queryString += ' WHERE '
-            if (firstName) {
-                queryString += `firstName LIKE '%${firstName}%'`
-                firstName = '%' + firstName + '%'
+            if (name) {
+                queryString += `name LIKE '%${name}%'`
+                name = '%' + name + '%'
             }
-            if (firstName && lastName) {
+            if (name && price) {
                 queryString += ` AND `
             }
-            if (lastName) {
-                queryString += `lastName='${lastName}'`
+            if (price) {
+                queryString += `price='${price}'`
             }
         }
         queryString += ';'
@@ -142,7 +142,7 @@ updateMeal: (req, res, next) => {
             if (err) next(err); // not connected!
 
             // Use the connection
-            connection.query(queryString, [firstName, lastName], function (error, results, fields) {
+            connection.query(queryString, [name, price], function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
 
