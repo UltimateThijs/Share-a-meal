@@ -6,6 +6,7 @@ const port = process.env.PORT;
 const bodyParser = require("body-parser");
 const authRoutes = require('./src/routes/auth.routes');
 const userRoutes = require('./src/routes/user.routes');
+const mealRoutes = require('./src/routes/meal.routes');
 const dbconnection = require('./src/database/dbconnection');
 const logger = require('./src/config/config').logger;
 
@@ -19,6 +20,7 @@ app.all("*", (req, res, next) => {
 
 app.use(userRoutes)
 app.use(authRoutes)
+app.use(mealRoutes)
 
 app.all("*", (req, res) => {
   res.status(404).json({
@@ -30,6 +32,7 @@ app.all("*", (req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   logger.debug('Error handler called.');
+  logger.error(err)
   res.status(500).json({
     status: 500,
     message: err.toString()
