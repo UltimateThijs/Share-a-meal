@@ -7,171 +7,156 @@ let controller = {
 
     // Validations
     validateMeal: (req, res, next) => {
-
-        let meal = req.body;
-        let { name, description, isActive, isVega, isVegan, isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cook, participants } = meal;
-
+        let { name, price, maxAmountOfParticipants } = req.body;
         try {
-            assert(typeof name === 'string', 'name must be a string')
-            assert(typeof description === 'string', 'description must be a string')
-            assert(typeof isActive === 'boolean', 'isActive must be a boolean')
-            assert(typeof isVega === 'boolean', 'isVega must be a boolean')
-            assert(typeof isVegan === 'boolean', 'isVegan must be a boolean')
-            assert(typeof isToTakeHome === 'boolean', 'isToTakeHome must be a boolean')
-            assert(typeof dateTime === 'string', 'dateTime must be a string')
-            assert(typeof imageUrl === 'string', 'imageUrl must be a string')
-            assert(typeof allergenes === 'object', 'allergenes must be an array')
-            assert(typeof maxAmountOfParticipants === 'number', 'maxAmountOfParticipants must be a number')
-            assert(typeof price === 'number', 'price must be a number')
-
-        } catch (error) {
-            const err = {
+            assert(typeof name === 'string', 'name must be present and be a string');
+            assert(typeof price === 'number', 'price must be present and be an number');
+            assert(typeof maxAmountOfParticipants === 'number', 'maxAmountOfParticipants must be present and an number');
+            next();
+        } catch (err) {
+            error = {
                 status: 400,
-                message: error.message
+                result: err.message
             }
-
-            next(err)
+            next(error);
         }
-
-        next();
     },
 
-    validateMealExistance:(req, res, next) => {
-        dbPools.getConnection(function(err, connection){
-          if (err) throw err;
-          connection.query('SELECT * FROM meal WHERE id = ?', [req.params.mealId], function (error, results, fields) {
-            if (error) throw error;
-            logger.debug(results.length);
-            if (results.length > 0){
-              next();
-            } else{
-              error ={
-                status: 404,
-                result: `Meal by id ${req.params.mealId} does not exist`
-              }
-              next(error);
-            }
-          });
+    validateMealExistance: (req, res, next) => {
+        dbPools.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query('SELECT * FROM meal WHERE id = ?', [req.params.mealId], function (error, results, fields) {
+                if (error) throw error;
+                logger.debug(results.length);
+                if (results.length > 0) {
+                    next();
+                } else {
+                    error = {
+                        status: 404,
+                        result: `Meal by id ${req.params.mealId} does not exist`
+                    }
+                    next(error);
+                }
+            });
         });
-      },
-    
-      validateMealOwner:(req, res, next) => {
-        dbPools.getConnection(function(err, connection){
-          if (err) throw err;
-          connection.query('SELECT cookId FROM meal WHERE id = ?', [req.params.mealId], function (error, results, fields) {
-            if(error) throw error;
-            logger.debug(results[0].cookId);
-            logger.debug(res.locals.userid);
-            if(results[0].cookId == res.locals.userid){
-                logger.debug(`Validated meal ownership`)
-              next();
-            } else{
-              const error ={
-                status: 403,
-                result: `This meal is not owned by the logged in user`
-              }
-              res.status(403).json({
-                status: 403,
-                message: `This meal is not owned by the logged in user`
-            })
-              next(error);
-            }
-          });
+    },
+
+    validateMealOwner: (req, res, next) => {
+        dbPools.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query('SELECT cookId FROM meal WHERE id = ?', [req.params.mealId], function (error, results, fields) {
+                if (error) throw error;
+                logger.debug(results[0].cookId);
+                logger.debug(res.locals.userid);
+                if (results[0].cookId == res.locals.userid) {
+                    logger.debug(`Validated meal ownership`)
+                    next();
+                } else {
+                    const error = {
+                        status: 403,
+                        result: `This meal is not owned by the logged in user`
+                    }
+                    res.status(403).json({
+                        status: 403,
+                        message: `This meal is not owned by the logged in user`
+                    })
+                    next(error);
+                }
+            });
         });
-      },
-
-    validateUpdatedMeal: (req, res, next) => {
-
     },
 
     // UC-301 Register a meal
-    addMeal: function (req, res) {
-        let meal = req.body
-        const id = parseInt(req.userId);
+    addMeal: (req, res, next) => {
+        let mealData = req.body;
 
-        dbconnection.getConnection(function (err, connection) {
-            if (err) throw err; // not connected!
+        logger.debug(res.locals.userid);
 
-            // Use the connection
-            connection.query('SELECT * FROM user WHERE id = ?', [id], function (error, results, fields) {
-                // When done with the connection, release it.
-                connection.release();
-
-                // Handle error after the release.
+        dbPools.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query(`INSERT INTO meal (isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants,
+                price, imageUrl, cookId, name, description, allergenes)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`, [mealData.isActive, mealData.isVega,
+            mealData.isVegan, mealData.isToTakeHome, mealData.dateTime,
+            mealData.maxAmountOfParticipants, mealData.price, mealData.imageUrl,
+            res.locals.userid, mealData.name, mealData.description, '[' + mealData.allergenes + ']'], function (error, results, fields) {
+                connection.release()
                 if (error) {
-                    console.error('Error in the database');
-                    console.debug(error);
-                    return;
+                    error = {
+                        status: 400,
+                        result: error.message
+                    }
+                    next(error);
                 } else {
-                    meal.participants = results[0];
-                    meal.cook = results[0]
-
-                    connection.query('INSERT INTO meal (name, description, isActive, isVega, isVegan, isToTakeHome, dateTime, imageUrl, allergenes, maxAmountOfParticipants, price, cookId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', [meal.name, meal.description, meal.isActive, meal.isVega, meal.isVegan, meal.isToTakeHome, meal.dateTime, meal.imageUrl, '[' + meal.allergenes + ']', meal.maxAmountOfParticipants, meal.price, req.userId], function (error, results, fields) {
-                        // When done with the connection, release it.
-                        connection.release();
-
-                        // Handle error after the release.
-                        if (error) {
-                            res.status(409).json({
-                                status: 409,
-                                message: error.message
+                    if (results.affectedRows > 0) {
+                        dbPools.getConnection(function (err, connection) {
+                            if (err) throw err;
+                            connection.query(`SELECT * FROM meal ORDER BY id DESC LIMIT 1`, function (error, results, fields) {
+                                connection.release()
+                                if (error) throw error;
+                                console.log('Meal added');
+                                res.status(201).json({
+                                    status: 201,
+                                    message: "Meal added with values:",
+                                    result: results,
+                                });
+                                logger.debug(mealData.allergenes)
                             })
-                            logger.error(error)
-                        } else {
-                            res.status(201).json({
-                                status: 201,
-                                result: {
-                                    id: results.insertId,
-                                    ...meal
-                                }
-                            })
-                            logger.debug('Meal registered successfully')
-                        }
-                    });
+                        })
+                    };
                 }
-            })
-        })
+            });
+        });
     },
 
 
     // UC-302 Update a single meal
     updateMeal: (req, res, next) => {
-        let userData = req.body;
-        const userId = req.params.userId;
+        const mealId = req.params.mealId;
+        let mealData = req.body;
 
-        dbconnection.getConnection(function (err, connection) {
-            if (err) throw err; // not connected!
+        dbPools.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query(`UPDATE meal SET isActive = ?, isVega = ?, isVegan = ?, isToTakeHome = ?,
+        dateTime = ?, maxAmountOfParticipants = ?,
+        price = ?, imageUrl = ?, cookId = ?,
+        name = ?, description = ?, allergenes = ? 
+        WHERE id = ?`,
+                [mealData.isActive, mealData.isVega,
+                mealData.isVegan, mealData.isToTakeHome, mealData.dateTime,
+                mealData.maxAmountOfParticipants, mealData.price, mealData.imageUrl,
+                res.locals.userid, mealData.name, mealData.description, '[' + mealData.allergenes + ']', parseInt(mealId)], function (error, results, fields) {
+                    connection.release()
+                    if (error) throw error;
 
-            // Use the connection
-            const query = "UPDATE user SET " + Object.keys(userData).map(key => `${key} = ?`).join(", ") + " WHERE id = ?";
-            const parameters = [...Object.values(userData), userId];
-            connection.query(query, parameters, function (error, results, fields) {
-                // When done with the connection, release it.
-                connection.release();
-
-                // Handle error after the release.
-                if (error) {
-                    res.status(400).json({
-                        status: 400,
-                        message: error.message
-                    })
-                    return;
-                } else if (results.affectedRows === 1) {
-                    res.status(200).json({
-                        status: 200,
-                        message: `User successfully updated`,
-                        result: {
-                            id: userId,
-                            ...userData
+                    if (results.warningCount > 0) {
+                        const error = {
+                            status: 400,
+                            result: `Some input is wrong`
                         }
-                    })
-                } else {
-                    res.status(400).json({
-                        status: 400,
-                        message: 'User not found'
-                    })
-                }
-            });
+                        next(error);
+                    } else if (results.affectedRows > 0) {
+                        dbPools.getConnection(function (err, connection) {
+                            connection.query('SELECT * FROM meal WHERE id = ?', [mealId], function (error, results, fields) {
+                                connection.release();
+                                if (error) throw error;
+                                console.log('Meal updated');
+                                res.status(200).json({
+                                    status: 200,
+                                    message: `meal ${mealId} updated to values:`,
+                                    result: results,
+                                });
+                            });
+                        });
+                    } else {
+                        const error = {
+                            status: 400,
+                            result: `meal by id ${req.params.mealId} does not exist`
+                        }
+                        next(error);
+                    }
+
+                });
         });
     },
 

@@ -1,4 +1,3 @@
-const assert = require('assert');
 const dbconnection = require('../database/dbconnection');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -37,7 +36,7 @@ let controller = {
                                 if (result == true) {
                                     jwt.sign(
                                         { userid: user.id },
-                                        process.env.JWT_SECRET,
+                                        jwtSecretKey,
                                         { expiresIn: '7d' },
                                         (err, token) => {
                                             if (err) console.log(err);
@@ -78,58 +77,32 @@ let controller = {
         });
     },
 
-    validateLogin(req, res, next) {
-        // Verify that we receive the expected input
-        try {
-            assert(
-                typeof req.body.emailAdress === 'string',
-                'email must be a string.'
-            )
-            assert(
-                typeof req.body.password === 'string',
-                'password must be a string.'
-            )
-            next()
-        } catch (ex) {
-            res.status(422).json({
-                error: ex.toString(),
-                datetime: new Date().toISOString(),
-            })
-        }
-    },
-
-    validateToken(req, res, next) {
-        logger.info('validateToken called')
-        // logger.trace(req.headers)
-        // The headers should contain the authorization-field with value 'Bearer [token]'
-        const authHeader = req.headers.authorization
+    validateToken: (req, res, next) => {
+        const authHeader = req.headers.authorization;
         if (!authHeader) {
-            logger.warn('Authorization header missing!')
-            res.status(401).json({
-                error: 'Authorization header missing!',
-                datetime: new Date().toISOString(),
-            })
+            //error
+            const error = {
+                status: 401,
+                result: `No key found`
+            }
+            next(error);
         } else {
-            // Strip the word 'Bearer ' from the headervalue
             const token = authHeader.substring(7, authHeader.length)
 
-            jwt.verify(token, jwtSecretKey, (err, payload) => {
+            jwt.verify(token, jwtSecretKey, (err, decoded) => {
                 if (err) {
-                    logger.warn('Not authorized')
-                    res.status(401).json({
-                        error: 'Not authorized',
-                        datetime: new Date().toISOString(),
-                    })
+                    const error = {
+                        status: 404,
+                        result: `This key isn't linked to any users`
+                    }
+                    next(error);
+                } else {
+                    res.locals.userid = decoded.userid;
+                    next();
                 }
-                if (payload) {
-                    logger.debug('token is valid', payload)
-                    // User heeft toegang. Voeg UserId uit payload toe aan
-                    // request, voor ieder volgend endpoint.
-                    req.userId = payload.userId
-                    next()
-                }
-            })
+            });
         }
+
     },
 }
 module.exports = controller
