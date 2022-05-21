@@ -160,12 +160,12 @@ updateMeal: (req, res, next) => {
 
         // UC-304 Get single meal by ID
         getMealById: (req, res, next) => {
-            const userId = req.params.userId;
-            logger.debug(`User met ID ${userId} gezocht`);
+            const mealId = req.params.mealId;
+            logger.debug(`Meal met ID ${mealId} gezocht`);
             dbconnection.getConnection(function (err, connection) {
                 if (err) throw err; // not connected!
                 // Use the connection
-                connection.query(`SELECT * FROM user WHERE id = ${userId}`, function (error, results, fields) {
+                connection.query(`SELECT * FROM meal WHERE id = ${mealId}`, function (error, results, fields) {
                     // When done with the connection, release it.
                     connection.release();
                     // Handle error after the release.
@@ -179,10 +179,11 @@ updateMeal: (req, res, next) => {
                                 status: 200,
                                 result: results[0]
                             })
+                            logger.debug(`Meal with ID ${mealId} found`)
                         } else {
                             res.status(404).json({
                                 status: 404,
-                                message: 'User not found!'
+                                message: 'Meal not found!'
                             })
                         }
                     }
