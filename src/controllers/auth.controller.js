@@ -1,7 +1,7 @@
 const assert = require('assert');
 const dbconnection = require('../database/dbconnection');
 const jwt = require('jsonwebtoken');
-
+const bcrypt = require('bcrypt');
 const logger = require('../config/config').logger
 const jwtSecretKey = require('../config/config').jwtSecretKey
 
@@ -9,6 +9,7 @@ let controller = {
 
     // UC-101 Login
     login: (req, res, next) => {
+        const { emailAdress, password } = req.body;
         dbconnection.getConnection((err, connection) => {
             if (err) {
                 logger.error('Error getting connection from dbconnection')
@@ -19,65 +20,62 @@ let controller = {
             }
             if (connection) {
                 // Check if user exists already
-                connection.query(
-                    'SELECT `id`, `emailAdress`, `password`, `firstName`, `lastName` FROM `user` WHERE `emailAdress` = ?',
-                    [req.body.emailAdress],
-                    (err, rows, fields) => {
-                        connection.release()
-                        if (err) {
-                            logger.error('Error: ', err.toString())
-                            res.status(500).json({
-                                error: err.toString(),
-                                datetime: new Date().toISOString(),
-                            })
-                        }
-                        if (rows) {
-                            // Result positive. Check password
-                            if (
-                                rows &&
-                                rows.length === 1 &&
-                                rows[0].password == req.body.password
-                            ) {
-                                logger.info(
-                                    'passwords DID match, sending userinfo and valid token'
-                                )
-                                // Extract the password from the userdata - we do not send that in the response.
-                                const { password, ...userinfo } = rows[0]
-                                // Create an object containing the data we want in the payload.
-                                const payload = {
-                                    userId: userinfo.id,
-                                }
+                const emailRegex = new RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
+                if (emailAdress && password && typeof (password) === 'string' && emailRegex.test(emailAdress)) {
+                    connection.query('SELECT id, firstName, lastName, emailAdress, password FROM user WHERE emailAdress = ?', emailAdress, function (error, results, fields) {
+                        connection.release();
+                        if (error) console.log(error);
 
-                                jwt.sign(
-                                    payload,
-                                    jwtSecretKey,
-                                    { expiresIn: '12d' },
-                                    function (err, token) {
-                                        logger.debug(
-                                            'User logged in, sending: ',
-                                            userinfo
-                                        )
-                                        res.status(200).json({
-                                            statusCode: 200,
-                                            results: { ...userinfo, token },
-                                        })
-                                    }
-                                )
-                            } else {
-                                logger.info(
-                                    'User not found or password invalid'
-                                )
-                                res.status(401).json({
-                                    message:
-                                        'User not found or password invalid',
-                                    datetime: new Date().toISOString(),
-                                })
-                            }
+
+                        if (results && results.length == 1) {
+                            //user met email gevonden
+                            //check of password klopt
+                            const user = results[0];
+
+                            bcrypt.compare(password, user.password, function (err, result) {
+                                if (err) throw err;
+                                if (result == true) {
+                                    jwt.sign(
+                                        { userid: user.id },
+                                        process.env.JWT_SECRET,
+                                        { expiresIn: '7d' },
+                                        (err, token) => {
+                                            if (err) console.log(err);
+
+                                            if (token) {
+                                                res.status(200).json({
+                                                    status: 200,
+                                                    result: token,
+                                                })
+                                            } else {
+                                                res.status(503).json({
+                                                    status: 503,
+                                                    result: `No token made`,
+                                                });
+                                            }
+                                        });
+                                } else {
+                                    res.status(400).json({
+                                        status: 400,
+                                        result: `Email and password not matching`,
+                                    });
+                                }
+                            });
+                        } else {
+                            res.status(404).json({
+                                status: 404,
+                                result: `No user with email: ${emailAdress}`,
+                            });
                         }
-                    }
-                )
+                    });
+                } else {
+                    res.status(400).json({
+                        status: 400,
+                        result: `Email and/or password not defined or not valid`,
+                    });
+                }
             }
-        })
+        });
     },
 
     validateLogin(req, res, next) {
