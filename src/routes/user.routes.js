@@ -4,13 +4,13 @@ const userController = require('../controllers/user.controller')
 const authController = require('../controllers/auth.controller')
 
 // UC-201 Register as a new user
-router.post("/api/user", authController.validateToken, userController.validateUser, userController.addUser);
+router.post("/api/user", userController.validateUser, userController.addUser);
 
 // UC-202 Get all users
-router.get("/api/user", authController.validateToken, userController.getAllUsers);
+router.get("/api/user", userController.getAllUsers);
 
 // UC-203 Request personal user profile
-router.get("/api/user/profile", authController.validateToken, userController.requestUserProfile);
+router.get("/api/user/profile", userController.requestUserProfile);
 
 // UC-204 Get single user by ID
 router.get("/api/user/:userId", authController.validateToken, userController.getUserById);

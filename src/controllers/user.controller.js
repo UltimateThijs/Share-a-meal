@@ -1,31 +1,68 @@
 const assert = require('assert');
 const dbconnection = require('../database/dbconnection')
 const logger = require('../config/config').logger;
+const bcrypt = require('bcrypt');
 
 let controller = {
 
+    validateUserExistance: (req, res, next) => {
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query('SELECT * FROM user WHERE id = ?', [req.params.userId], function (error, results, fields) {
+                if (error) throw error;
+                if (results.length > 0) {
+                    next();
+                } else {
+                    error = {
+                        status: 400,
+                        result: `User by id ${req.params.userId} does not exist`
+                    }
+                    next(error);
+                }
+            });
+        });
+    },
+
     validateUser: (req, res, next) => {
-        let { emailAdress, password, firstName, lastName, city, street } = req.body;
+        let user = req.body;
+        let { firstName, lastName, emailAdress, password } = user;
 
-        try {
-            assert.equal(typeof emailAdress === 'string', 'emailAdress must be a string')
-            assert.equal(typeof firstName === 'string', 'firstName must be a string')
-            assert.equal(typeof lastName === 'string', 'lastName must be a string')
-            assert.equal(typeof password === 'string', 'password must be a string')
-            assert.equal(typeof street === 'string', 'street must be a string')
-            assert.equal(typeof city === 'string', 'city must be a string')
+        let emailcounters;
+        dbconnection.getConnection(function (err, connection) {
+            if (err) throw err;
+            connection.query('SELECT * FROM user WHERE emailAdress = ?', [emailAdress], function (error, results, fields) {
+                if (error) throw error;
+                emailcounters = results.length;
+                try {
+                    const emailRegex = new RegExp(/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/);
 
-            next()
+                    assert(emailcounters == 0, 'email already exists');
+                    assert(typeof firstName === 'string', 'firstName must be a string');
+                    assert(typeof lastName === 'string', 'lastName must be a string');
+                    assert(typeof emailAdress === 'string', 'emailAdress must be a string');
+                    assert(typeof password === 'string', 'password must be a string');
+                    assert(emailAdress != "", 'Email can\'t be empty');
+                    assert(password != "", 'Password can\'t be empty');
+                    assert(emailRegex.test(emailAdress));
+                    next();
+                } catch (err) {
+                    let error;
+                    if (err.message == "email already exists") {
+                        error = {
+                            status: 409,
+                            result: err.message
+                        }
+                    } else {
+                        error = {
+                            status: 400,
+                            result: err.message
+                        }
+                    }
 
-        } catch (err) {
-            logger.debug(`Error message: ${err.message}`)
-            logger.debug(`Error code: ${err.code}`)
-
-            res.status(400).json({
-                status: 400,
-                message: err.message
-            })
-        }
+                    next(error);
+                }
+            });
+        });
     },
 
     validateUpdatedUser: (req, res, next) => {
@@ -47,33 +84,37 @@ let controller = {
 
     // UC-201 Register as a new user
     addUser: (req, res, next) => {
-        let user = req.body
+        let userData = req.body;
+        bcrypt.hash(userData.password, 10, function (err, hash) {
+            if (err) throw err;
+            let user = [userData.firstName, userData.lastName,
+            userData.isActive, userData.emailAdress, hash, //hashed password
+            userData.phoneNumber, userData.roles, userData.street, userData.city];
 
-        dbconnection.getConnection(function (err, connection) {
-            if (err) throw err; // not connected!
+            dbconnection.getConnection(function (err, connection) {
+                if (err) throw err;
+                connection.query(`INSERT INTO user (firstName, lastName, isActive, emailAdress, password, phoneNumber, roles, street, city) VALUES (?,?,?,?,?,?,?,?,?)`, user, function (error, results, fields) {
+                    connection.release()
+                    if (error) throw error;
 
-            // Use the connection
-            connection.query('INSERT INTO user (firstName, lastName, street, city, password, emailAdress) VALUES (?, ?, ?, ?, ?, ?);', [user.firstName, user.lastName, user.street, user.city, user.password, user.emailAdress], function (error, results, fields) {
-                // When done with the connection, release it.
-                connection.release();
+                    if (results.affectedRows > 0) {
 
-                // Handle error after the release.
-                if (error) {
-                    res.status(409).json({
-                        status: 409,
-                        message: error.message
-                    })
-                } else {
-                    res.status(201).json({
-                        status: 201,
-                        result: {
-                            id: results.insertId,
-                            isActive: user.isActive || true,
-                            phoneNumber: user.isActive || "-",
-                            ...user
-                        }
-                    })
-                }
+                        dbconnection.getConnection(function (err, connection) {
+                            if (err) throw err;
+                            connection.query(`SELECT * FROM user ORDER BY id DESC LIMIT 1`, user, function (error, results, fields) {
+                                connection.release()
+                                if (error) throw error;
+                                console.log('User added');
+                                res.status(201).json({
+                                    status: 201,
+                                    message: "User added with values:",
+                                    result: results,
+                                });
+                            })
+                        })
+
+                    };
+                });
             });
         });
     },
@@ -81,7 +122,7 @@ let controller = {
     // UC-202 Get all users
     getAllUsers: (req, res, next) => {
         logger.debug(`getAllUsers aangeroepen. req.userId = ${req.userId}`);
-        
+
         const queryParams = req.query
         logger.debug(queryParams);
 
