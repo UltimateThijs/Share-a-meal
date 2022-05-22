@@ -333,4 +333,66 @@ describe('Meals', () => {
                 })
         })
     });
+
+    describe('UC-304 Details van een maaltijd opvragen', () => {
+        beforeEach((done) => {
+            pools.getConnection(function (err, connection) {
+                connection.query(CLEAR_MEAL_TABLE, function (error, results, fields) {
+                    if (error) console.log(error);
+                    connection.query(CLEAR_PARTICIPANTS_TABLE, function (error, results, fields) {
+                        if (error) console.log(error);
+                        connection.query(CLEAR_USERS_TABLE, function (error, results, fields) {
+                            if (error) console.log(error);
+                            connection.query(`INSERT INTO user (id,firstName, lastName, isActive, emailAdress, password, phoneNumber, roles, street, city) VALUES
+                            (5,"testname","test",0,"testmail2@gmail.com","secret","test","guest","test","test")`, function (error, results, fields) {
+                                if (error) throw error;
+                                connection.query(`INSERT INTO user (id,firstName, lastName, isActive, emailAdress, password, phoneNumber, roles, street, city) VALUES
+                                (1,"testname","test", 0,"testmail@gmail.com","secret","test","guest","test","test")`, function (error, results, fields) {
+                                    if (error) throw error;
+                                    connection.query(`INSERT INTO meal (id,isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, name, description, allergenes) VALUES
+                                    (2,0,0,0,0, "2020-05-20 00:40:00.000", 5, 4.20, "https://images0.persgroep.net/rcs/MbMRv6NyAxtAIhKmT4_pYZstOuY/diocontent/115445912/_fitwidth/694/?appId=21791a8992982cd8da851550a453bd7f&quality=0.8",
+                                    1,"fries","tasty fries","gluten")`, function (error, results, fields) {
+                                        if (error) throw error;
+                                        connection.query(`INSERT INTO meal (id,isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, name, description, allergenes) VALUES
+                                        (3,0,0,0,0, "2020-05-20 00:40:00.000", 5, 4.20, "https://images0.persgroep.net/rcs/MbMRv6NyAxtAIhKmT4_pYZstOuY/diocontent/115445912/_fitwidth/694/?appId=21791a8992982cd8da851550a453bd7f&quality=0.8",
+                                        5,"fries","tasty fries","gluten")`, function (error, results, fields) {
+                                            if (error) throw error;
+                                            connection.release();
+                                            done();
+                                        })
+                                    })
+                                });
+                            });
+                        });
+                    });
+                });
+            })
+        });
+
+        it('TC-304-1 Maaltijd bestaat niet', (done) => {
+            chai
+                .request(server)
+                .get('/api/meal/10')
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, result } = res.body;
+                    status.should.equal(404);
+                    result.should.be.an('string').that.equals("meal by id 10 does not exist");
+                    done();
+                })
+        })
+        
+        it('TC-304-2 Details van maaltijd geretourneerd', (done) => {
+            chai
+                .request(server)
+                .get('/api/meal/2')
+                .end((err, res) => {
+                    res.should.be.an('object')
+                    let { status, result } = res.body;
+                    status.should.equal(200);
+                    result.should.be.an('array');
+                    done();
+                })
+        })
+    });
 })
