@@ -3,9 +3,9 @@ const logger = require('../config/config').logger;
 require('dotenv').config();
 
 const dbConfig = {
-    connectionLimit: 10,
+    connectionLimit: 50,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 50,
     queueLimit: 0,
     multipleStatements: true,
     host: process.env.DB_HOST,

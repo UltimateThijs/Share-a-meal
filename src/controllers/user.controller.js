@@ -1,5 +1,5 @@
 const assert = require('assert');
-const dbconnection = require('../database/dbconnection')
+const dbconnection = require('../../src/database/dbconnection')
 const logger = require('../config/config').logger;
 const bcrypt = require('bcrypt');
 
@@ -126,19 +126,19 @@ let controller = {
         const queryParams = req.query
         logger.debug(queryParams);
 
-        let { firstName, lastName } = req.query
+        let { firstName, isActive } = req.query
         let queryString = 'SELECT `id`, `firstName` FROM `user`'
-        if (firstName || lastName) {
+        if (firstName || isActive) {
             queryString += ' WHERE '
             if (firstName) {
                 queryString += `firstName LIKE '%${firstName}%'`
                 firstName = '%' + firstName + '%'
             }
-            if (firstName && lastName) {
+            if (firstName && isActive) {
                 queryString += ` AND `
             }
-            if (lastName) {
-                queryString += `lastName='${lastName}'`
+            if (isActive) {
+                queryString += `isActive='${isActive}'`
             }
         }
         queryString += ';'
@@ -148,7 +148,7 @@ let controller = {
             if (err) next(err); // not connected!
 
             // Use the connection
-            connection.query(queryString, [firstName, lastName], function (error, results, fields) {
+            connection.query(queryString, [firstName, isActive], function (error, results, fields) {
                 // When done with the connection, release it.
                 connection.release();
 
@@ -165,12 +165,19 @@ let controller = {
     },
 
     // UC-203 Request personal user profile
-    requestUserProfile: (req, res, next) => {
-        res.status(404).json({
-            status: 404,
-            result: "Function not functioning yet",
-        });
-    },
+    requestUserProfile:(req, res) => {
+        dbPools.getConnection(function(err, connection){
+          if (err) throw err;
+          
+          connection.query('SELECT * FROM user WHERE id = ?', [res.locals.userid], function (error, results, fields) {
+            if (error) throw error;
+            res.status(200).json({
+              status: 200,
+              result: results,
+            });
+          })
+        })
+      },
 
     // UC-204 Get single user by ID
     getUserById: (req, res, next) => {

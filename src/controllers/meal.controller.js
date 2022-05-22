@@ -94,10 +94,10 @@ let controller = {
                             connection.query(`SELECT * FROM meal ORDER BY id DESC LIMIT 1`, function (error, results, fields) {
                                 connection.release()
                                 if (error) throw error;
-                                console.log('Meal added');
+                                logger.debug('Meal added');
                                 res.status(201).json({
                                     status: 201,
-                                    message: "Meal added with values:",
+                                    message: "meal added with values:",
                                     result: results,
                                 });
                                 logger.debug(mealData.allergenes)
@@ -161,7 +161,7 @@ let controller = {
     },
 
     // UC-303 Get all meals
-    getAllMeals: (req, res) => {
+    getAllMeals: (req, res, next) => {
         logger.debug(`getAllMeals aangeroepen.`);
 
         const queryParams = req.query
@@ -197,8 +197,8 @@ let controller = {
                 if (error) throw error;
 
                 logger.debug('#results = ', results.length);
-                res.status(201).json({
-                    status: 201,
+                res.status(200).json({
+                    status: 200,
                     result: results
                 })
             });
@@ -224,13 +224,13 @@ let controller = {
                     if (results && results.length) {
                         res.status(200).json({
                             status: 200,
-                            result: results[0]
+                            result: results
                         })
                         logger.debug(`Meal with ID ${mealId} found`)
                     } else {
                         res.status(404).json({
                             status: 404,
-                            message: 'Meal not found!'
+                            result: `meal by id ${req.params.mealId} does not exist`
                         })
                     }
                 }
@@ -257,7 +257,7 @@ let controller = {
                 } else if (results.affectedRows === 0) {
                     res.status(400).json({
                         status: 400,
-                        message: 'Meal does not exist'
+                        message: 'meal by id ${req.params.mealId} does not exist'
                     })
                 } else {
                     res.status(200).json({
