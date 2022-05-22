@@ -10,7 +10,7 @@ router.post("/api/user", userController.validateUser, userController.addUser);
 router.get("/api/user", userController.getAllUsers);
 
 // UC-203 Request personal user profile
-router.get("/api/user/profile", userController.requestUserProfile);
+router.get("/api/user/profile", authController.validateToken, userController.requestUserProfile);
 
 // UC-204 Get single user by ID
 router.get("/api/user/:userId", authController.validateToken, userController.getUserById);

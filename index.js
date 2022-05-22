@@ -31,13 +31,8 @@ app.all("*", (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  logger.debug('Error handler called.');
-  logger.error(err)
-  res.status(500).json({
-    status: 500,
-    message: err.toString()
-  })
-})
+  res.status(err.status).json(err)
+});
 
 app.listen(port, () => {
   logger.debug(`Example app listening on port ${port}`);
